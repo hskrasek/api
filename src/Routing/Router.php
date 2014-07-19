@@ -8,6 +8,8 @@ use BadMethodCallException;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Route;
 use Dingo\Api\ExceptionHandler;
+use Illuminate\Events\Dispatcher;
+use Illuminate\Container\Container;
 use Dingo\Api\Http\InternalRequest;
 use Dingo\Api\Exception\ResourceException;
 use Dingo\Api\Http\Response as ApiResponse;
@@ -84,6 +86,13 @@ class Router extends IlluminateRouter
     protected $conditionalRequest = true;
 
     /**
+     * Indicates if we are debugging.
+     *
+     * @var bool
+     */
+    protected $degugging;
+
+    /**
      * Exception handler instance.
      *
      * @var \Dingo\Api\ExceptionHandler
@@ -103,6 +112,22 @@ class Router extends IlluminateRouter
      * @var array
      */
     protected $requestsTargettingApi = [];
+
+
+    /**
+     * Create a new Router instance.
+     *
+     * @param  \Illuminate\Events\Dispatcher  $events
+     * @param  \Illuminate\Container\Container  $container
+     * @param  bool  $debug
+     * @return void
+     */
+    public function __construct(Dispatcher $events, Container $container = null, $debug = false)
+    {
+        parent::__construct($events, $container);
+
+        $this->debugging = $debug;
+    }
 
     /**
      * Register an API group.
@@ -207,8 +232,7 @@ class Router extends IlluminateRouter
             $response['code'] = $code;
         }
 
-        $debug = app('config')->get('api::debug');
-        if ($debug) {
+        if ($this->debugging) {
             $response['debug'] = [
                 'line'  => $exception->getLine(),
                 'file'  => $exception->getFile(),
@@ -368,7 +392,7 @@ class Router extends IlluminateRouter
 
     /**
      * Get the default API route collection.
-     * 
+     *
      * @return \Dingo\Api\Routing\ApiRouteCollection|null
      */
     public function getDefaultApiRouteCollection()
